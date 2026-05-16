@@ -50,6 +50,10 @@ def plot_msd(
 ) -> plt.Figure:
     """Plot ensemble-averaged MSD vs time on a log-log scale.
 
+    Computes displacement from each trajectory's starting point and averages
+    over the ensemble. Equivalent to true MSD when all particles start from
+    the same initial position (the standard setup for these simulations).
+
     Args:
         trajs: List of trajectory arrays, each shape (n_steps+1, 3).
         dt:    Time step in seconds.
