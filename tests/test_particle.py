@@ -56,6 +56,7 @@ def test_active_particle_zero_noise_moves_straight():
 def test_active_particle_v0_matches_passive():
     """Active particle with v=0 must produce identical trajectory to passive (same seed)."""
     kwargs = dict(D_T=0.22, D_R=0.16, v=0.0, dt=0.01, seed=7)
+    # Two separate SimParams so each particle gets its own independent RNG seeded at 7
     passive = PassiveBrownianParticle(SimParams(**kwargs))
     active = ActiveBrownianParticle(SimParams(**kwargs))
     for _ in range(20):
