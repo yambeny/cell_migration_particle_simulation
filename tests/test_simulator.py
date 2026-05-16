@@ -20,10 +20,14 @@ def test_simulator_first_row_is_initial_state():
 
 
 def test_simulator_is_deterministic():
+    """Two simulators built from identical params+seed must produce identical trajectories."""
     params = SimParams(n_steps=100, v=1.0, seed=42)
-    traj1 = Simulator(ActiveBrownianParticle(params), params).run()
-    traj2 = Simulator(ActiveBrownianParticle(params), params).run()
-    np.testing.assert_array_equal(traj1, traj2)
+    runs = [
+        Simulator(ActiveBrownianParticle(params), params).run()
+        for _ in range(3)
+    ]
+    np.testing.assert_array_equal(runs[0], runs[1])
+    np.testing.assert_array_equal(runs[1], runs[2])
 
 
 def test_passive_msd_scales_linearly_with_time():

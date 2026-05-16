@@ -18,6 +18,11 @@ class Simulator:
         self.params = params
 
     def run(self) -> np.ndarray:
+        """Run the simulation and return the trajectory.
+
+        Warning: advances self.particle state in place. Call run() only once
+        per Simulator instance, or construct a fresh particle for each run.
+        """
         p = self.params
         traj = np.empty((p.n_steps + 1, 3))
         traj[0] = self.particle.state()
