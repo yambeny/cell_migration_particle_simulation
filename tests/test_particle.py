@@ -1,6 +1,5 @@
-import numpy as np
-import pytest
 from simulation.params import SimParams
+from simulation.particle import PassiveBrownianParticle
 
 
 def test_simparams_defaults():
@@ -15,8 +14,6 @@ def test_simparams_defaults():
     assert p.y0 == 0.0
     assert p.phi0 == 0.0
 
-
-from simulation.particle import PassiveBrownianParticle
 
 
 def test_passive_particle_initializes():
