@@ -36,3 +36,22 @@ class PassiveBrownianParticle(Particle):
         self.x += noise_t * eta[0]
         self.y += noise_t * eta[1]
         self.phi += noise_r * eta[2]
+
+
+class ActiveBrownianParticle(Particle):
+    """Self-propelled active Brownian particle — Eq. 4.
+
+    Euler-Maruyama:
+        x += v*cos(phi)*dt + sqrt(2*D_T*dt) * eta_x
+        y += v*sin(phi)*dt + sqrt(2*D_T*dt) * eta_y
+        phi += sqrt(2*D_R*dt) * eta_phi
+    """
+
+    def step(self) -> None:
+        p = self.params
+        eta = self._rng.standard_normal(3)
+        noise_t = np.sqrt(2.0 * p.D_T * p.dt)
+        noise_r = np.sqrt(2.0 * p.D_R * p.dt)
+        self.x += p.v * np.cos(self.phi) * p.dt + noise_t * eta[0]
+        self.y += p.v * np.sin(self.phi) * p.dt + noise_t * eta[1]
+        self.phi += noise_r * eta[2]
