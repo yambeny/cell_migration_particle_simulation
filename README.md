@@ -35,6 +35,25 @@ At short times: ballistic (straight line). At long times (t >> 1/D_R): diffusive
 
 ---
 
+## Theoretical Predictions (simulation/theory.py)
+
+The MSD has exact analytical solutions used to validate the simulation:
+
+| Quantity | Formula |
+|----------|---------|
+| Passive MSD | `4·D_T·t` (slope 1 always) |
+| Active MSD (exact) | `4·D_T·t + (2v²/D_R)·[t − (1−e^{−D_R t})/D_R]` |
+| Short-time asymptote (t ≪ τ_R) | `4·D_T·t + v²·t²` — ballistic, **slope 2** |
+| Long-time asymptote (t ≫ τ_R) | `4·D_eff·t` — diffusive, **slope 1** |
+| Crossover time | `τ_R = 1/D_R` |
+| Enhanced diffusivity | `D_eff = D_T + v²/(2·D_R)` |
+
+With default params: `τ_R = 6.25 s`, `D_eff = 12.72 µm²/s`.
+
+The MSD plot (`msd_comparison.png`) overlays all theoretical curves on the simulation data, with a vertical dashed line at `τ_R`.
+
+---
+
 ## How to Run
 
 ### Prerequisites
@@ -70,12 +89,14 @@ code/
 ├── simulation/
 │   ├── params.py         # SimParams dataclass — all tunable parameters in one place
 │   ├── particle.py       # Particle ABC, PassiveBrownianParticle, ActiveBrownianParticle
-│   └── simulator.py      # Simulator — time-steps a particle, returns trajectory array
+│   ├── simulator.py      # Simulator — time-steps a particle, returns trajectory array
+│   └── theory.py         # Analytical MSD formulas for validation
 ├── visualization/
 │   └── plotter.py        # plot_trajectory(), plot_msd() — static figure functions
 ├── tests/
 │   ├── test_particle.py  # Unit tests for PassiveBrownianParticle and ActiveBrownianParticle
-│   └── test_simulator.py # Integration tests for Simulator (shape, determinism, MSD scaling)
+│   ├── test_simulator.py # Integration tests for Simulator (shape, determinism, MSD scaling)
+│   └── test_theory.py    # Unit tests for all analytical formulas in theory.py
 ├── main.py               # Entry point — saves trajectories.png and msd_comparison.png
 ├── animate.py            # Live animation entry point
 └── requirements.txt      # numpy, matplotlib, pytest
@@ -88,8 +109,9 @@ code/
 | `simulation/params.py` | Single source of truth for all physics parameters. Change `D_T`, `D_R`, `v`, `dt`, `n_steps`, `seed`, `x0`, `y0`, `phi0` here. |
 | `simulation/particle.py` | `Particle` is an abstract base class. Each subclass implements `step()` for one physics model. Adding a new model = add a new subclass. |
 | `simulation/simulator.py` | `Simulator(particle, params).run()` returns a `(n_steps+1, 3)` NumPy array where columns are `[x, y, phi]`. Row 0 is the initial state. **Note:** `run()` mutates the particle in place — create a fresh particle for each run. |
-| `visualization/plotter.py` | `plot_trajectory(traj, title, ax)` draws a time-colored path. `plot_msd(trajs, dt, label, ax)` draws ensemble-averaged MSD on a log-log scale. Both accept an optional `ax` to embed in a larger figure. |
-| `main.py` | Demo script. Top of file has all constants (`D_T`, `D_R`, `V`, etc.) — edit there to experiment. |
+| `simulation/theory.py` | Pure-function analytical predictions: `passive_msd`, `active_msd`, `active_msd_short_time`, `active_msd_long_time`, `effective_diffusion`, `rotational_relaxation_time`. No simulation state. |
+| `visualization/plotter.py` | `plot_trajectory(traj, title, ax)` draws a time-colored path. `plot_msd(trajs, dt, label, ax, theory_curves)` draws ensemble-averaged MSD on a log-log scale with optional theoretical overlays. |
+| `main.py` | Demo script. Top of file has all constants (`D_T`, `D_R`, `V`, etc.) — edit there to experiment. Prints `tau_R` and `D_eff` on startup. |
 | `animate.py` | Same constants at the top. `SKIP` controls playback speed (higher = faster). `TRAIL` controls how many past positions are shown. |
 
 ---
@@ -103,7 +125,7 @@ code/
 
 ---
 
-## Tests (11 total)
+## Tests (18 total)
 
 | Test | What it verifies |
 |------|-----------------|
@@ -118,6 +140,13 @@ code/
 | `test_simulator_first_row_is_initial_state` | Row 0 matches x0, y0, phi0 |
 | `test_simulator_is_deterministic` | 3 independent runs with same seed produce identical arrays |
 | `test_passive_msd_scales_linearly_with_time` | Ensemble MSD ≈ 4·D_T·t within 20% (200 realizations) |
+| `test_passive_msd_linear` | passive_msd = 4·D_T·t exactly |
+| `test_active_msd_reduces_to_passive_when_v0` | active_msd with v=0 equals passive_msd |
+| `test_active_msd_short_time_ballistic` | active_msd ≈ 4·D_T·t + v²t² for t ≪ τ_R |
+| `test_active_msd_long_time_slope` | d(MSD)/dt → 4·D_eff for t ≫ τ_R |
+| `test_active_msd_short_time_matches_asymptote` | active_msd_short_time = 4·D_T·t + v²t² exactly |
+| `test_effective_diffusion` | D_eff = D_T + v²/(2·D_R) |
+| `test_rotational_relaxation_time` | τ_R = 1/D_R |
 
 ---
 

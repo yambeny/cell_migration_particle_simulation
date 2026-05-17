@@ -47,6 +47,7 @@ def plot_msd(
     dt: float,
     label: str = "",
     ax: plt.Axes | None = None,
+    theory_curves: list[tuple] | None = None,
 ) -> plt.Figure:
     """Plot ensemble-averaged MSD vs time on a log-log scale.
 
@@ -55,9 +56,13 @@ def plot_msd(
     the same initial position (the standard setup for these simulations).
 
     Args:
-        trajs: List of trajectory arrays, each shape (n_steps+1, 3).
-        dt:    Time step in seconds.
-        label: Legend label for this dataset.
+        trajs:         List of trajectory arrays, each shape (n_steps+1, 3).
+        dt:            Time step in seconds.
+        label:         Legend label for the simulation data.
+        theory_curves: Optional list of (t, msd, label, kwargs) tuples to
+                       overlay as reference lines (e.g. theoretical predictions).
+                       Each tuple: t and msd are np.ndarrays, label is a str,
+                       kwargs is a dict passed directly to ax.loglog.
     """
     if ax is None:
         fig, ax = plt.subplots(figsize=(6, 5))
@@ -72,10 +77,15 @@ def plot_msd(
         for traj in trajs
     ])
 
-    ax.loglog(t, msds.mean(axis=0), label=label or "MSD")
+    ax.loglog(t, msds.mean(axis=0), lw=2, label=label or "MSD (simulation)")
+
+    if theory_curves:
+        for t_th, msd_th, th_label, kwargs in theory_curves:
+            ax.loglog(t_th, msd_th, label=th_label, **kwargs)
+
     ax.set_xlabel("time [s]")
     ax.set_ylabel("MSD [µm²]")
     ax.set_title("Mean Squared Displacement")
-    ax.legend()
+    ax.legend(fontsize=8)
     ax.grid(True, which="both", ls="--", alpha=0.4)
     return fig
