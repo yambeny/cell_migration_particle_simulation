@@ -67,11 +67,12 @@ def test_position_acf_shape():
     assert acf.shape == (20,)
 
 
-def test_position_acf_zero_lag_nonnegative():
-    """Zero-lag position ACF = mean(r²) >= 0."""
+def test_position_acf_zero_lag_equals_mean_r_squared():
+    """Zero-lag position ACF = mean(x² + y²) across all time origins."""
     traj = _run(n_steps=500)
     _, acf = position_acf([traj], max_lag=10)
-    assert acf[0] >= 0.0
+    expected = np.mean(traj[:, 0] ** 2 + traj[:, 1] ** 2)
+    assert abs(acf[0] - expected) < 1e-10
 
 
 def test_position_acf_stationary_particle_is_zero():
