@@ -67,3 +67,32 @@ def test_effective_diffusion():
 
 def test_rotational_relaxation_time():
     assert abs(rotational_relaxation_time(0.16) - 6.25) < 1e-10
+
+
+def test_orientation_acf_theory_at_zero():
+    from simulation.theory import orientation_acf_theory
+    t = np.array([0.0, 1.0, 2.0])
+    result = orientation_acf_theory(t, D_R=0.5)
+    assert abs(result[0] - 1.0) < 1e-10   # exp(0) = 1
+
+
+def test_orientation_acf_theory_decays():
+    from simulation.theory import orientation_acf_theory
+    t = np.linspace(0, 10, 100)
+    result = orientation_acf_theory(t, D_R=0.5)
+    assert result[-1] < result[0]
+    np.testing.assert_allclose(result, np.exp(-0.5 * t))
+
+
+def test_velocity_acf_theory_at_zero():
+    from simulation.theory import velocity_acf_theory
+    t = np.array([0.0])
+    result = velocity_acf_theory(t, v=2.0, D_R=0.5)
+    assert abs(result[0] - 4.0) < 1e-10   # v² * exp(0) = 4
+
+
+def test_velocity_acf_theory_decays():
+    from simulation.theory import velocity_acf_theory
+    t = np.linspace(0, 10, 100)
+    result = velocity_acf_theory(t, v=2.0, D_R=0.5)
+    np.testing.assert_allclose(result, 4.0 * np.exp(-0.5 * t))

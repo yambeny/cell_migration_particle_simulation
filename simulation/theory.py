@@ -52,3 +52,13 @@ def effective_diffusion(D_T: float, D_R: float, v: float) -> float:
 def rotational_relaxation_time(D_R: float) -> float:
     """Rotational relaxation time τ_R = 1/D_R [s]. Marks the ballistic→diffusive crossover."""
     return 1.0 / D_R
+
+
+def orientation_acf_theory(t: np.ndarray, D_R: float) -> np.ndarray:
+    """Theoretical orientation ACF for ABP: exp(-D_R * t)."""
+    return np.exp(-D_R * t)
+
+
+def velocity_acf_theory(t: np.ndarray, v: float, D_R: float) -> np.ndarray:
+    """Theoretical velocity ACF for ABP (lag > 0): v² * exp(-D_R * t)."""
+    return v**2 * np.exp(-D_R * t)
