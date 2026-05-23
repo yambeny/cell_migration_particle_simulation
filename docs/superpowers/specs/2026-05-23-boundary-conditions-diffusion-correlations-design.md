@@ -7,10 +7,11 @@
 
 ## Overview
 
-Three additions to the particle simulation:
+Four additions to the particle simulation:
 1. Three boundary condition modes (reflection, stop, slip)
 2. A physical mode that derives D_T and D_R from the Stokes-Einstein-Debye relations
 3. Three correlation functions (orientation, velocity, position) with theory overlays
+4. A boundary condition comparison function that runs all modes side-by-side
 
 ---
 
@@ -191,6 +192,37 @@ overlaid as dashed lines where provided. x-axis in seconds.
 
 ---
 
+## 4. Boundary Condition Comparison
+
+### Function: `compare_boundary_conditions`
+
+Lives in `main.py` (importable helper, not buried in `if __name__ == "__main__"`):
+
+```python
+def compare_boundary_conditions(
+    particle_cls,          # PassiveBrownianParticle or ActiveBrownianParticle
+    base_params: SimParams,
+    box_size: float,
+    n_ensemble: int = 30,
+) -> plt.Figure
+```
+
+Runs the same particle under all four boundary modes — `"none"`, `"reflect"`, `"stop"`,
+`"slip"` — using identical seeds. `base_params` is cloned for each mode with
+`boundary` and `box_size` overridden; `D_T`, `D_R`, `v`, `dt`, `n_steps`, and `seed`
+are unchanged so the only variable is the boundary rule.
+
+**Output figure: 2 rows × 4 columns**
+
+- Row 1: trajectory plots (one per boundary mode), box boundary drawn as a dashed square
+- Row 2: ensemble-averaged MSD vs time (log-log), all four modes on one shared axis for
+  direct comparison
+
+This makes the behavioral difference between modes immediately visible: reflect fills
+the box ergodically, stop accumulates at walls, slip slides along them, none escapes freely.
+
+---
+
 ## File Changes Summary
 
 | File | Change |
@@ -203,7 +235,7 @@ overlaid as dashed lines where provided. x-axis in seconds.
 | `tests/test_particle.py` | Tests for all three boundary modes (reflect, stop, slip) |
 | `tests/test_analysis.py` | Tests for correlation functions (shape, symmetry, passive limit) |
 | `tests/test_params.py` | Tests for `from_physical` (unit check, reference values) |
-| `main.py` | Demo: boundary condition examples + correlation function plots |
+| `main.py` | Add `compare_boundary_conditions` helper + demo calls for boundary comparison and correlation plots |
 | `README.md` | Update with new features |
 
 ---
