@@ -60,9 +60,9 @@ class Particle(ABC):
 
         if p.boundary == "slip":
             if x_new > L or x_new < -L:
-                x_new = self.x   # block x: stay at current x
+                x_new = float(np.clip(self.x, -L, L))
             if y_new > L or y_new < -L:
-                y_new = self.y   # block y: stay at current y
+                y_new = float(np.clip(self.y, -L, L))
             return x_new, y_new, phi
 
         return x_new, y_new, phi

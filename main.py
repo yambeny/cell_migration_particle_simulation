@@ -169,7 +169,7 @@ def main():
     }
     theory_curves = {
         "orientation": orientation_acf_theory(dt_arr, D_R),
-        "velocity":    velocity_acf_theory(dt_arr, V, D_R),
+        "velocity":    np.concatenate([[np.nan], velocity_acf_theory(dt_arr[1:], V, D_R)]),
     }
 
     fig4 = plot_correlations(acfs, theory=theory_curves)
