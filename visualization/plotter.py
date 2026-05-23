@@ -89,3 +89,50 @@ def plot_msd(
     ax.legend(fontsize=8)
     ax.grid(True, which="both", ls="--", alpha=0.4)
     return fig
+
+
+def plot_correlations(
+    acfs: dict[str, tuple[np.ndarray, np.ndarray]],
+    theory: dict[str, np.ndarray] | None = None,
+    ax_array=None,
+) -> plt.Figure:
+    """Plot orientation, velocity, and position autocorrelation functions.
+
+    Args:
+        acfs:     dict mapping "orientation", "velocity", "position" to
+                  (lag_times_s, values) tuples where lag_times_s is in seconds.
+        theory:   optional dict with same keys; values are theory arrays
+                  (same length as corresponding acf arrays).
+        ax_array: optional array of 3 pre-existing Axes to draw into.
+
+    Returns:
+        The Figure.
+    """
+    if ax_array is None:
+        fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+    else:
+        axes = ax_array
+        fig = axes[0].get_figure()
+
+    configs = [
+        ("orientation", "Orientation ACF\n⟨cos(Δφ(τ))⟩",       "C_φ(τ)"),
+        ("velocity",    "Velocity ACF\n⟨v(t+τ)·v(t)⟩",          "C_v(τ) [µm²/s²]"),
+        ("position",    "Position ACF\n⟨r(t)·r(t+τ)⟩",          "C_r(τ) [µm²]"),
+    ]
+
+    for ax, (key, title, ylabel) in zip(axes, configs):
+        if key not in acfs:
+            ax.set_visible(False)
+            continue
+        t, values = acfs[key]
+        ax.plot(t, values, label="simulation")
+        if theory and key in theory:
+            ax.plot(t, theory[key], "--", label="theory", alpha=0.7)
+        ax.set_xlabel("lag time [s]")
+        ax.set_ylabel(ylabel)
+        ax.set_title(title)
+        ax.legend(fontsize=8)
+        ax.grid(True, ls="--", alpha=0.4)
+
+    fig.tight_layout()
+    return fig
