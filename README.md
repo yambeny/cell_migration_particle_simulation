@@ -2,7 +2,7 @@
 
 A modular 2D particle simulation built incrementally across weekly assignments. Each phase adds new physics on top of a clean, testable foundation.
 
-**Current phase:** Phase 1 — single-particle passive and active Brownian motion.
+**Current phase:** Phase 1 — single-particle passive and active Brownian motion, boundary conditions, and correlation analysis.
 
 ---
 
@@ -32,6 +32,41 @@ At short times: ballistic (straight line). At long times (t >> 1/D_R): diffusive
 - `D_T` ≈ 0.22 µm²/s — translational diffusion
 - `D_R` ≈ 0.16 rad²/s — rotational diffusion
 - `v` ∈ [0, 3] µm/s — self-propulsion speed
+
+### Physical D_T / D_R (Stokes-Einstein-Debye)
+
+Instead of setting `D_T` and `D_R` manually, derive them from the particle radius using the Stokes-Einstein-Debye relations (Eq. 1 & 2):
+
+```python
+params = SimParams.from_physical(radius_um=1.0, T_K=300.0, eta_Pa_s=1e-3, v=2.0)
+# → D_T ≈ 0.214 µm²/s,  D_R ≈ 0.161 rad²/s
+```
+
+### Boundary Conditions
+
+Set `boundary` and `box_size` in `SimParams` to confine the particle to a square box `[−L, L] × [−L, L]`:
+
+| `boundary` | Behaviour |
+|---|---|
+| `"none"` (default) | Unbounded — particle roams freely |
+| `"reflect"` | Elastic reflection; orientation φ also mirrors at the wall |
+| `"stop"` | Particle clamps to the wall; resumes on next valid step |
+| `"slip"` | Motion component parallel to wall is preserved; perpendicular is zeroed |
+
+```python
+params = SimParams(boundary="reflect", box_size=5.0, v=2.0, ...)
+fig = compare_boundary_conditions(ActiveBrownianParticle, params, box_size=5.0)
+```
+
+### Correlation Functions
+
+Three autocorrelation functions available in `simulation/analysis.py`:
+
+| Function | Formula | Theory (ABP) |
+|---|---|---|
+| `orientation_acf` | `⟨cos(φ(t+τ) − φ(t))⟩` | `exp(−D_R τ)` |
+| `velocity_acf` | `⟨v(t+τ)·v(t)⟩` from position differences | `v²·exp(−D_R τ)` at τ>0 |
+| `position_acf` | `⟨r(t)·r(t+τ)⟩` | no closed form |
 
 ---
 
@@ -68,6 +103,8 @@ python main.py
 Produces:
 - `trajectories.png` — passive (left) and active (right) trajectories, colored blue→red over time
 - `msd_comparison.png` — log-log MSD showing active particle's ballistic-to-diffusive crossover
+- `boundary_comparison.png` — trajectory + MSD comparison across all four boundary modes
+- `correlations.png` — orientation, velocity, and position ACFs with theory overlays
 
 ### Live animation
 ```bash
@@ -87,17 +124,20 @@ python -m pytest tests/ -v
 ```
 code/
 ├── simulation/
-│   ├── params.py         # SimParams dataclass — all tunable parameters in one place
-│   ├── particle.py       # Particle ABC, PassiveBrownianParticle, ActiveBrownianParticle
+│   ├── params.py         # SimParams dataclass — all tunable parameters + from_physical classmethod
+│   ├── particle.py       # Particle ABC with boundary logic; PassiveBrownianParticle; ActiveBrownianParticle
 │   ├── simulator.py      # Simulator — time-steps a particle, returns trajectory array
-│   └── theory.py         # Analytical MSD formulas for validation
+│   ├── analysis.py       # orientation_acf, velocity_acf, position_acf
+│   └── theory.py         # Analytical MSD + ACF formulas for validation
 ├── visualization/
-│   └── plotter.py        # plot_trajectory(), plot_msd() — static figure functions
+│   └── plotter.py        # plot_trajectory(), plot_msd(), plot_correlations()
 ├── tests/
-│   ├── test_particle.py  # Unit tests for PassiveBrownianParticle and ActiveBrownianParticle
+│   ├── test_params.py    # Tests for SimParams boundary validation and from_physical
+│   ├── test_particle.py  # Unit tests for all particle types and boundary modes
 │   ├── test_simulator.py # Integration tests for Simulator (shape, determinism, MSD scaling)
-│   └── test_theory.py    # Unit tests for all analytical formulas in theory.py
-├── main.py               # Entry point — saves trajectories.png and msd_comparison.png
+│   ├── test_theory.py    # Unit tests for all analytical formulas in theory.py
+│   └── test_analysis.py  # Tests for correlation function computation
+├── main.py               # Entry point — saves 4 PNGs including boundary comparison and ACF plots
 ├── animate.py            # Live animation entry point
 └── requirements.txt      # numpy, matplotlib, pytest
 ```
