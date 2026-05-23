@@ -166,6 +166,26 @@ def test_slip_stays_inside_box():
     assert -5.0 <= p.y <= 5.0
 
 
+def test_reflect_multi_bounce_stays_inside_box():
+    """Step overshooting by more than 2L must still land inside the box."""
+    p = _make("reflect", box_size=5.0)
+    # x_new=15.1 overshoots right wall (5), bounces off left wall, ends at -4.9
+    x, y, phi = p._apply_boundary(15.1, 0.0, 0.0)
+    assert -5.0 <= x <= 5.0, f"x={x} escaped box after multi-bounce"
+
+
+def test_reflect_active_particle_stays_inside_box():
+    """ActiveBrownianParticle must also stay inside box under reflect boundary."""
+    from simulation.particle import ActiveBrownianParticle
+    params = SimParams(D_T=2.0, D_R=0.5, v=3.0, dt=0.1, n_steps=2000,
+                       boundary="reflect", box_size=5.0, seed=10)
+    p = ActiveBrownianParticle(params)
+    for _ in range(2000):
+        p.step()
+    assert -5.0 <= p.x <= 5.0
+    assert -5.0 <= p.y <= 5.0
+
+
 def test_boundary_none_is_unchanged():
     """boundary='none' must produce bit-identical results to old behavior."""
     params_old = SimParams(D_T=0.22, D_R=0.16, v=1.0, dt=0.01, n_steps=100, seed=99)

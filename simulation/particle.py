@@ -29,20 +29,26 @@ class Particle(ABC):
         L = p.box_size
 
         if p.boundary == "reflect":
-            x_hit = False
-            y_hit = False
-            if x_new > L:
-                x_new = 2.0 * L - x_new
+            span = 2.0 * L  # full box width
+
+            x_norm = x_new + L         # shift so box starts at 0 → [0, span]
+            x_fold = x_norm % (2 * span)  # fold into [0, 2*span] = [0, 4L]
+            if x_fold <= span:
+                x_new = x_fold - L
+                x_hit = False
+            else:
+                x_new = 3.0 * L - x_fold  # = L - (x_fold - span)
                 x_hit = True
-            elif x_new < -L:
-                x_new = -2.0 * L - x_new
-                x_hit = True
-            if y_new > L:
-                y_new = 2.0 * L - y_new
+
+            y_norm = y_new + L
+            y_fold = y_norm % (2 * span)
+            if y_fold <= span:
+                y_new = y_fold - L
+                y_hit = False
+            else:
+                y_new = 3.0 * L - y_fold
                 y_hit = True
-            elif y_new < -L:
-                y_new = -2.0 * L - y_new
-                y_hit = True
+
             if x_hit:
                 phi = np.pi - phi
             if y_hit:
