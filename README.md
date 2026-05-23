@@ -102,9 +102,11 @@ python main.py
 ```
 Produces:
 - `trajectories.png` — passive (left) and active (right) trajectories, colored blue→red over time
-- `msd_comparison.png` — log-log MSD showing active particle's ballistic-to-diffusive crossover
-- `boundary_comparison.png` — trajectory + MSD comparison across all four boundary modes
-- `correlations.png` — orientation, velocity, and position ACFs with theory overlays
+- `msd_comparison.png` — log-log MSD with ballistic/diffusive asymptotes, exact theory, and τ_R marker
+- `boundary_comparison_passive.png` — trajectory + MSD for all four boundary modes (passive particle)
+- `boundary_comparison_active.png` — same for active particle; MSD shows free-space theory + reflect saturation (2L²/3)
+- `correlations.png` — orientation ACF with theory overlay and fitted correlation time τ_c
+- `stop_vs_slip_demo.png` — x-position density histograms at extreme parameters to visualise stop vs slip difference
 
 ### Live animation
 ```bash
@@ -151,7 +153,7 @@ code/
 | `simulation/simulator.py` | `Simulator(particle, params).run()` returns a `(n_steps+1, 3)` NumPy array where columns are `[x, y, phi]`. Row 0 is the initial state. **Note:** `run()` mutates the particle in place — create a fresh particle for each run. |
 | `simulation/theory.py` | Pure-function analytical predictions: `passive_msd`, `active_msd`, `active_msd_short_time`, `active_msd_long_time`, `effective_diffusion`, `rotational_relaxation_time`. No simulation state. |
 | `visualization/plotter.py` | `plot_trajectory(traj, title, ax)` draws a time-colored path. `plot_msd(trajs, dt, label, ax, theory_curves)` draws ensemble-averaged MSD on a log-log scale with optional theoretical overlays. |
-| `main.py` | Demo script. Top of file has all constants (`D_T`, `D_R`, `V`, etc.) — edit there to experiment. Prints `tau_R` and `D_eff` on startup. |
+| `main.py` | Demo script. Saves 6 PNGs. Top of file has all constants (`D_T`, `D_R`, `V`, etc.) — edit there to experiment. Prints `tau_R` and `D_eff` on startup. |
 | `animate.py` | Same constants at the top. `SKIP` controls playback speed (higher = faster). `TRAIL` controls how many past positions are shown. |
 
 ---
