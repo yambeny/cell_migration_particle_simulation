@@ -5,12 +5,12 @@ import matplotlib.patches as mpatches
 from simulation.params import SimParams
 from simulation.particle import PassiveBrownianParticle, ActiveBrownianParticle
 from simulation.simulator import Simulator
-from simulation.analysis import orientation_acf, velocity_acf, position_acf
+from simulation.analysis import orientation_acf
 from simulation.theory import (
     passive_msd, active_msd, effective_diffusion, rotational_relaxation_time,
-    orientation_acf_theory, velocity_acf_theory,
+    orientation_acf_theory,
 )
-from visualization.plotter import plot_trajectory, plot_msd, plot_correlations
+from visualization.plotter import plot_trajectory, plot_msd
 
 D_T = 0.22
 D_R = 0.16
@@ -139,9 +139,22 @@ def main():
         for s in range(N_ENSEMBLE)
     ]
 
+    t_th = np.arange(1, N_STEPS + 1) * DT_SIM
     fig2, ax = plt.subplots(figsize=(7, 5))
-    plot_msd(passive_trajs, DT_SIM, label="Passive (Eq. 3)",             ax=ax)
-    plot_msd(active_trajs,  DT_SIM, label=f"Active v={V} µm/s (Eq. 4)", ax=ax)
+    plot_msd(
+        passive_trajs, DT_SIM, label="Passive (Eq. 3)", ax=ax,
+        theory_curves=[
+            (t_th, passive_msd(t_th, D_T), "passive theory",
+             dict(ls="--", color="tab:blue", alpha=0.7)),
+        ],
+    )
+    plot_msd(
+        active_trajs, DT_SIM, label=f"Active v={V} µm/s (Eq. 4)", ax=ax,
+        theory_curves=[
+            (t_th, active_msd(t_th, D_T, D_R, V), "active theory",
+             dict(ls="--", color="tab:orange", alpha=0.7)),
+        ],
+    )
     fig2.tight_layout()
     fig2.savefig("msd_comparison.png", dpi=150)
     print("Saved msd_comparison.png")
@@ -154,25 +167,31 @@ def main():
     fig3.savefig("boundary_comparison.png", dpi=150)
     print("Saved boundary_comparison.png")
 
-    # ── 4. Correlation functions ───────────────────────────────────────────────
+    # ── 4. Orientation ACF + correlation time extraction ──────────────────────
     max_lag = 300
     dt_arr  = np.arange(max_lag) * DT_SIM
 
-    lag_steps_o, acf_o = orientation_acf(active_trajs, max_lag=max_lag)
-    lag_steps_v, acf_v = velocity_acf(active_trajs, dt=DT_SIM, max_lag=max_lag)
-    lag_steps_r, acf_r = position_acf(active_trajs, max_lag=max_lag)
+    _, acf_o = orientation_acf(active_trajs, max_lag=max_lag)
 
-    acfs = {
-        "orientation": (dt_arr, acf_o),
-        "velocity":    (dt_arr, acf_v),
-        "position":    (dt_arr, acf_r),
-    }
-    theory_curves = {
-        "orientation": orientation_acf_theory(dt_arr, D_R),
-        "velocity":    np.concatenate([[np.nan], velocity_acf_theory(dt_arr[1:], V, D_R)]),
-    }
+    # Log-linear fit: log C_φ(τ) = −D_R · τ  →  slope = −D_R
+    mask    = acf_o > 0.05   # exclude noisy tail where log is unreliable
+    D_R_fit = -np.polyfit(dt_arr[mask], np.log(acf_o[mask]), 1)[0]
+    tau_c   = 1.0 / D_R_fit
+    print(f"Fitted D_R = {D_R_fit:.3f} rad²/s  (input = {D_R})   τ_c = {tau_c:.2f} s")
 
-    fig4 = plot_correlations(acfs, theory=theory_curves)
+    fig4, ax4 = plt.subplots(figsize=(7, 5))
+    ax4.plot(dt_arr, acf_o, label="simulation")
+    ax4.plot(dt_arr, orientation_acf_theory(dt_arr, D_R), "--",
+             color="tab:orange", alpha=0.8,
+             label=f"theory: exp(−D_R τ),  D_R = {D_R}")
+    ax4.axvline(tau_c, ls=":", color="gray",
+                label=f"fitted τ_c = {tau_c:.2f} s  (D_R = {D_R_fit:.3f})")
+    ax4.set_xlabel("lag time [s]")
+    ax4.set_ylabel("C_φ(τ)")
+    ax4.set_title("Orientation ACF  ⟨cos(Δφ(τ))⟩")
+    ax4.legend(fontsize=9)
+    ax4.grid(True, ls="--", alpha=0.4)
+    fig4.tight_layout()
     fig4.savefig("correlations.png", dpi=150)
     print("Saved correlations.png")
 
