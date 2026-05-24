@@ -56,7 +56,20 @@ class Particle(ABC):
             return x_new, y_new, phi
 
         if p.boundary == "stop":
-            return float(np.clip(x_new, -L, L)), float(np.clip(y_new, -L, L)), phi
+            # Particle hits wall and stops entirely — both components frozen.
+            # Parallel motion is NOT preserved; the particle stays at the wall point
+            # until rotational diffusion rotates phi enough to escape.
+            x_hit = x_new > L or x_new < -L
+            y_hit = y_new > L or y_new < -L
+            if x_hit:
+                x_new = float(np.clip(x_new, -L, L))
+                if not y_hit:
+                    y_new = self.y   # freeze parallel component
+            if y_hit:
+                y_new = float(np.clip(y_new, -L, L))
+                if not x_hit:
+                    x_new = self.x   # freeze parallel component
+            return x_new, y_new, phi
 
         if p.boundary == "slip":
             if x_new > L or x_new < -L:

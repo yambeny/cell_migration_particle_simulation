@@ -128,12 +128,28 @@ def test_reflect_stays_inside_box():
 
 # stop
 def test_stop_clamps_to_wall():
-    """Proposed x_new=7.0 with L=5 → x clamped to 5.0."""
-    p = _make("stop")
-    x, y, phi = p._apply_boundary(7.0, 0.0, 0.5)
+    """x hits wall: x clamped to L, y frozen at self.y (not advanced to y_new)."""
+    p = _make("stop")   # x0=y0=0
+    x, y, phi = p._apply_boundary(7.0, 2.0, 0.5)
+    assert x == 5.0     # x → wall
+    assert y == 0.0     # y frozen at self.y=0.0, not moved to y_new=2.0
+    assert phi == 0.5   # phi unchanged
+
+
+def test_stop_freezes_parallel_motion():
+    """When x hits wall, y is also frozen — stop ≠ slip (parallel does NOT continue)."""
+    p = _make("stop", x0=4.9, y0=1.0)
+    x, y, phi = p._apply_boundary(5.5, 1.8, 0.3)
+    assert x == 5.0     # x clamped to wall
+    assert y == 1.0     # y frozen at self.y=1.0, not at y_new=1.8
+
+
+def test_stop_corner_hit_clamps_both():
+    """Corner hit (both x and y cross): both are clamped, no extra freeze logic needed."""
+    p = _make("stop")   # x0=y0=0
+    x, y, phi = p._apply_boundary(6.0, 7.0, 0.5)
     assert x == 5.0
-    assert y == 0.0
-    assert phi == 0.5  # phi unchanged
+    assert y == 5.0
 
 
 def test_stop_stays_inside_box():
