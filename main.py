@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+from pathlib import Path
 
 from simulation.params import SimParams
 from simulation.particle import PassiveBrownianParticle, ActiveBrownianParticle
@@ -13,12 +14,31 @@ from simulation.theory import (
 )
 from visualization.plotter import plot_trajectory, plot_msd
 
-D_T = 0.22
-D_R = 0.16
-V   = 2.0
+_HERE = Path(__file__).parent  # always save PNGs next to main.py
+
+# ── Parameter mode ────────────────────────────────────────────────────────────
+# USE_PHYSICAL = True  → D_T and D_R derived from particle radius via
+#                        Stokes-Einstein-Debye (Eqs. 1 & 2 in Romanczuk et al.)
+# USE_PHYSICAL = False → use D_T and D_R values set directly below
+USE_PHYSICAL = True
+
+# Physical particle parameters (active when USE_PHYSICAL = True)
+RADIUS_UM = 1.0    # particle radius [µm]
+T_K       = 300.0  # temperature [K]
+ETA_PA_S  = 1e-3   # dynamic viscosity [Pa·s]  (water at ~20 °C)
+
+# Direct diffusion coefficients (active when USE_PHYSICAL = False)
+D_T = 0.22   # translational diffusion [µm²/s]
+D_R = 0.16   # rotational diffusion [rad²/s]
+
+if USE_PHYSICAL:
+    _phys = SimParams.from_physical(radius_um=RADIUS_UM, T_K=T_K, eta_Pa_s=ETA_PA_S)
+    D_T, D_R = _phys.D_T, _phys.D_R
+
+V           = 2.0    # self-propulsion speed [µm/s]
 DT_SIM      = 0.01
-N_STEPS     = 2000   # for trajectory plots
-N_STEPS_MSD = 5000   # longer to show ballistic → diffusive crossover
+N_STEPS     = 10000   # for trajectory plots
+N_STEPS_MSD = 10000   # longer to show ballistic → diffusive crossover
 N_ENSEMBLE  = 50
 
 
@@ -150,7 +170,7 @@ def main():
     plot_trajectory(traj_p, title="Passive Brownian (Eq. 3)",             ax=axes[0])
     plot_trajectory(traj_a, title=f"Active Brownian v={V} µm/s (Eq. 4)", ax=axes[1])
     fig.tight_layout()
-    fig.savefig("trajectories.png", dpi=150)
+    fig.savefig(_HERE / "trajectories.png", dpi=150)
     plt.close(fig)
     print("Saved trajectories.png")
 
@@ -197,7 +217,7 @@ def main():
                label=f"τ_R = 1/D_R = {tau_R:.2f} s")
     ax.legend(fontsize=7)
     fig2.tight_layout()
-    fig2.savefig("msd_comparison.png", dpi=150)
+    fig2.savefig(_HERE / "msd_comparison.png", dpi=150)
     plt.close(fig2)
     print("Saved msd_comparison.png")
 
@@ -209,7 +229,7 @@ def main():
         PassiveBrownianParticle, base_p, box_size=5.0, n_ensemble=20,
         n_steps_msd=N_STEPS_MSD,
     )
-    fig3p.savefig("boundary_comparison_passive.png", dpi=150)
+    fig3p.savefig(_HERE / "boundary_comparison_passive.png", dpi=150)
     plt.close(fig3p)
     print("Saved boundary_comparison_passive.png")
 
@@ -218,7 +238,7 @@ def main():
         ActiveBrownianParticle, base_a, box_size=5.0, n_ensemble=20,
         n_steps_msd=N_STEPS_MSD,
     )
-    fig3a.savefig("boundary_comparison_active.png", dpi=150)
+    fig3a.savefig(_HERE / "boundary_comparison_active.png", dpi=150)
     plt.close(fig3a)
     print("Saved boundary_comparison_active.png")
 
@@ -247,7 +267,7 @@ def main():
     ax4.legend(fontsize=9)
     ax4.grid(True, ls="--", alpha=0.4)
     fig4.tight_layout()
-    fig4.savefig("correlations.png", dpi=150)
+    fig4.savefig(_HERE / "correlations.png", dpi=150)
     plt.close(fig4)
     print("Saved correlations.png")
 
@@ -316,7 +336,7 @@ def main():
         f"→  step v·dt = {V_DEMO*DT_SIM:.2f} µm  ({step_pct:.0f}% of box width)"
     )
     demo_fig.tight_layout()
-    demo_fig.savefig("stop_vs_slip_demo.png", dpi=150)
+    demo_fig.savefig(_HERE / "stop_vs_slip_demo.png", dpi=150)
     plt.close(demo_fig)
     print("Saved stop_vs_slip_demo.png")
 
