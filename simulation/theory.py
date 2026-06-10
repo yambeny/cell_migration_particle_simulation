@@ -54,6 +54,18 @@ def rotational_relaxation_time(D_R: float) -> float:
     return 1.0 / D_R
 
 
+def active_msd_exponent(t: np.ndarray, D_T: float, D_R: float, v: float) -> np.ndarray:
+    """Local log-log slope of active MSD: α(t) = d(log MSD)/d(log t) = t·dMSD/dt / MSD.
+
+    α=1 at t→0 (diffusive), peaks slightly above 1 near t~τ_R when Pe>0, returns to 1 at t→∞.
+    Only shows a clear ballistic peak (α→2) when τ_T = 4D_T/v² ≪ τ_R = 1/D_R (high Pe).
+    """
+    tau_R = 1.0 / D_R
+    msd = active_msd(t, D_T, D_R, v)
+    dmsd_dt = 4.0 * D_T + (2.0 * v**2 / D_R) * (1.0 - np.exp(-t / tau_R))
+    return t * dmsd_dt / msd
+
+
 def orientation_acf_theory(t: np.ndarray, D_R: float) -> np.ndarray:
     """Theoretical orientation ACF for ABP: exp(-D_R * t)."""
     return np.exp(-D_R * t)
